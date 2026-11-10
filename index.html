@@ -259,7 +259,70 @@ async function loadDashboardStats(){
   }
 }
 
-async function loadPlayers(){
+
+async function adjustPlayerCoins(playerId, action) {
+  const amountText = prompt("কত Coins পরিবর্তন করতে চাও?");
+  if (amountText === null) return;
+
+  const amount = Number(amountText);
+
+  if (!Number.isSafeInteger(amount) || amount <= 0) {
+    alert("সঠিক পূর্ণসংখ্যা লিখুন।");
+    return;
+  }
+
+  const reason = prompt("পরিবর্তনের কারণ লিখুন:");
+  if (!reason || !reason.trim()) return;
+
+  const signedAmount = action === "add" ? amount : -amount;
+
+  if (!confirm("এই Player-এর Coins পরিবর্তন করতে চাও?")) return;
+
+  const { data, error } = await supabaseClient.rpc(
+    "admin_adjust_player_coins",
+    {
+      p_player_id: String(playerId),
+      p_amount: signedAmount,
+      p_reason: reason.trim()
+    }
+  );
+
+  if (error) {
+    alert("সমস্যা: " + error.message);
+    return;
+  }
+
+  alert("Coin পরিবর্তন সফল হয়েছে!");
+  await loadPlayers();
+}
+
+async function togglePlayerBlock(playerId, currentlyBlocked) {
+  const blocked = !currentlyBlocked;
+
+  const reason = prompt("Block/Unblock করার কারণ লিখুন:");
+  if (!reason || !reason.trim()) return;
+
+  if (!confirm(blocked ? "এই Player-কে Block করবে?" : "এই Player-কে Unblock করবে?")) return;
+
+  const { data, error } = await supabaseClient.rpc(
+    "admin_set_player_block",
+    {
+      p_player_id: String(playerId),
+      p_blocked: blocked,
+      p_reason: reason.trim()
+    }
+  );
+
+  if (error) {
+    alert("সমস্যা: " + error.message);
+    return;
+  }
+
+  alert(blocked ? "Player Block হয়েছে!" : "Player Unblock হয়েছে!");
+  await loadPlayers();
+}
+
+async function loadPlayers() {
   const message = document.getElementById("playersMessage");
   const list = document.getElementById("playersList");
   const button = document.getElementById("loadPlayersButton");
@@ -270,13 +333,13 @@ async function loadPlayers(){
 
   try {
     const { data, error } = await supabaseClient.rpc("admin_list_players");
-    if(error) throw error;
+    if (error) throw error;
 
-    if(!Array.isArray(data)) {
+    if (!Array.isArray(data)) {
       throw new Error("Player List-এর তথ্য সঠিক নয়।");
     }
 
-    if(data.length === 0) {
+    if (data.length === 0) {
       message.textContent = "এখনো কোনো Player পাওয়া যায়নি।";
       return;
     }
@@ -285,13 +348,16 @@ async function loadPlayers(){
       const card = document.createElement("div");
       card.className = "ad";
 
+      const playerId = player.player_id;
+      const blocked = String(player.is_blocked).toLowerCase() === "true";
+
       const details = [
         ["Username", player.username],
-        ["Player ID", player.player_id],
+        ["Player ID", playerId],
         ["Telegram ID", player.telegram_id],
         ["Coins", player.coins],
         ["Balance", player.balance],
-        ["Status", player.status],
+        ["Status", blocked ? "Blocked" : "Active"],
         ["Created", player.created_at]
       ];
 
@@ -300,6 +366,28 @@ async function loadPlayers(){
         row.textContent = label + ": " + (value ?? "—");
         card.appendChild(row);
       });
+
+      const addButton = document.createElement("button");
+      addButton.textContent = "➕ Add Coins";
+      addButton.addEventListener("click", () => {
+        adjustPlayerCoins(playerId, "add");
+      });
+
+      const removeButton = document.createElement("button");
+      removeButton.textContent = "➖ Remove Coins";
+      removeButton.addEventListener("click", () => {
+        adjustPlayerCoins(playerId, "remove");
+      });
+
+      const blockButton = document.createElement("button");
+      blockButton.textContent = blocked ? "Unblock Player" : "Block Player";
+      blockButton.addEventListener("click", () => {
+        togglePlayerBlock(playerId, blocked);
+      });
+
+      card.appendChild(addButton);
+      card.appendChild(removeButton);
+      card.appendChild(blockButton);
 
       list.appendChild(card);
     });
