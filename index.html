@@ -115,6 +115,15 @@ hr{border:0;border-top:1px solid #50617b;margin:14px 0}
 
 <div class="panel">
 <h2>📊 Server Dashboard</h2>
+  
+<div class="panel">
+  <h2>👥 Player Management</h2>
+  <p class="muted">Supabase Database-এর Player তালিকা</p>
+  <button id="loadPlayersButton" onclick="loadPlayers()">↻ Load Players</button>
+  <p id="playersMessage" class="muted" role="status"></p>
+  <div id="playersList"></div>
+</div>
+
 <p class="muted">Supabase Database থেকে পাওয়া আসল সার্ভার পরিসংখ্যান</p>
 <div class="server-grid">
   <div class="server-card"><span>মোট Player</span><b id="serverPlayers">—</b></div>
@@ -250,6 +259,60 @@ async function loadDashboardStats(){
   }
 }
 
+async function loadPlayers(){
+  const message = document.getElementById("playersMessage");
+  const list = document.getElementById("playersList");
+  const button = document.getElementById("loadPlayersButton");
+
+  message.textContent = "Player তথ্য আনা হচ্ছে...";
+  list.replaceChildren();
+  button.disabled = true;
+
+  try {
+    const { data, error } = await supabaseClient.rpc("admin_list_players");
+    if(error) throw error;
+
+    if(!Array.isArray(data)) {
+      throw new Error("Player List-এর তথ্য সঠিক নয়।");
+    }
+
+    if(data.length === 0) {
+      message.textContent = "এখনো কোনো Player পাওয়া যায়নি।";
+      return;
+    }
+
+    data.forEach(player => {
+      const card = document.createElement("div");
+      card.className = "ad";
+
+      const details = [
+        ["Username", player.username],
+        ["Player ID", player.player_id],
+        ["Telegram ID", player.telegram_id],
+        ["Coins", player.coins],
+        ["Balance", player.balance],
+        ["Status", player.status],
+        ["Created", player.created_at]
+      ];
+
+      details.forEach(([label, value]) => {
+        const row = document.createElement("p");
+        row.textContent = label + ": " + (value ?? "—");
+        card.appendChild(row);
+      });
+
+      list.appendChild(card);
+    });
+
+    message.textContent = data.length + " জন Player পাওয়া গেছে।";
+
+  } catch(error) {
+    message.textContent = "সমস্যা: " + (error.message || "তথ্য লোড হয়নি");
+  } finally {
+    button.disabled = false;
+  }
+}
+
 async function adminLogin(){
   const email=document.getElementById("adminEmail").value.trim();
   const password=document.getElementById("adminPassword").value;
@@ -274,6 +337,7 @@ async function adminLogin(){
     message.textContent="Admin পরিচয় সার্ভার থেকে যাচাই হয়েছে।";
     update();
     await loadDashboardStats();
+    await loadPlayers();
   }catch(error){
     message.textContent=error.message||"Login ব্যর্থ হয়েছে।";
   }finally{
@@ -297,6 +361,7 @@ async function restoreAdminSession(){
       document.getElementById("adminLoginPanel").classList.add("hidden");
       document.getElementById("adminIdentity").textContent="Logged in: "+(session.user.email||"Verified Admin");
       await loadDashboardStats();
+      await loadPlayers();
     }else{
       await supabaseClient.auth.signOut();
     }
