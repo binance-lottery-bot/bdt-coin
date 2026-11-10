@@ -1,10 +1,14 @@
+
 <!DOCTYPE html>
 <html lang="bn">
-<head> 
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BDT COIN - Admin Dashboard</title>
+<title>BDT COIN - Dashboard</title>
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#101827;color:#fff;font-family:Arial,sans-serif}
@@ -12,7 +16,7 @@ header{text-align:center;padding:22px;background:#17243a}
 header h1{color:#facc15;margin:0}
 header p{color:#aab8cc}
 nav{display:flex;gap:8px;padding:12px}
-button{border:0;border-radius:9px;padding:12px;background:#facc15;color:#172033;font-weight:bold;cursor:pointer}
+button{border:0;border-radius:9px;padding:12px;background:#facc15;color:#172033;font-weight:bold;cursor:pointer;margin:3px}
 button:disabled{opacity:.6;cursor:not-allowed}
 nav button{flex:1}
 main{padding:14px;max-width:600px;margin:auto}
@@ -22,7 +26,7 @@ h3{margin-bottom:6px}
 .muted{color:#aab8cc;font-size:13px}
 .big{font-size:30px;font-weight:bold;color:#facc15;overflow-wrap:anywhere}
 .ad{border:1px solid #50617b;padding:14px;border-radius:10px;margin:10px 0}
-.ad button{width:100%;margin-top:8px}
+.ad button{margin-top:8px}
 input{width:100%;padding:12px;border-radius:8px;border:0;margin:7px 0}
 .hidden{display:none}
 .stat{display:flex;justify-content:space-between;margin:10px 0;gap:12px}
@@ -36,10 +40,12 @@ hr{border:0;border-top:1px solid #50617b;margin:14px 0}
 .server-card{background:#263852;padding:13px;border-radius:10px;min-width:0}
 .server-card span{display:block;color:#aab8cc;font-size:12px;margin-bottom:7px}
 .server-card b{font-size:22px;color:#facc15;overflow-wrap:anywhere}
+#telegramRegistrationStatus{line-height:1.6}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
+
 <body>
+
 <header>
 <h1>🪙 BDT COIN</h1>
 <p>Tap • Earn • Grow</p>
@@ -51,7 +57,18 @@ hr{border:0;border-top:1px solid #50617b;margin:14px 0}
 </nav>
 
 <main>
+
+<!-- PLAYER PANEL -->
 <section id="player">
+
+<div class="panel">
+<h2>👤 Telegram Player Registration</h2>
+<p id="telegramRegistrationStatus" class="muted">
+Telegram যাচাই করা হচ্ছে...
+</p>
+<p id="telegramPlayerInfo" class="small"></p>
+</div>
+
 <div class="panel">
 <h2>Player Dashboard</h2>
 <p>Your Balance</p>
@@ -66,7 +83,9 @@ hr{border:0;border-top:1px solid #50617b;margin:14px 0}
 <div class="panel">
 <h2>📺 Reward Ads</h2>
 <p class="muted">প্রতিটি সফল Reward Ad-এ ১০০ Point। দৈনিক সর্বোচ্চ ১০টি।</p>
-<div class="notice">এটি শুধু স্থানীয় Demo। এখানে আসল বিজ্ঞাপন বা যাচাইকৃত Reward যুক্ত নেই।</div>
+<div class="notice">
+এটি শুধু স্থানীয় Demo। এখানে আসল বিজ্ঞাপন বা যাচাইকৃত Reward যুক্ত নেই।
+</div>
 <div class="ad">
 <h3>🎁 Watch & Earn</h3>
 <p>Demo Reward: <b>100 Points</b></p>
@@ -76,7 +95,10 @@ hr{border:0;border-top:1px solid #50617b;margin:14px 0}
 
 <div class="panel">
 <h2>🖼️ Banner Ads</h2>
-<div class="banner"><strong>BDT COIN Advertisement</strong><p class="muted">Banner Ad এখানে দেখানো হবে</p></div>
+<div class="banner">
+<strong>BDT COIN Advertisement</strong>
+<p class="muted">Banner Ad এখানে দেখানো হবে</p>
+</div>
 <p class="small">Banner দেখার জন্য Point দেওয়া হয় না।</p>
 </div>
 
@@ -92,22 +114,32 @@ hr{border:0;border-top:1px solid #50617b;margin:14px 0}
 <div class="stat"><span>Reward Ads</span><b id="myRewards">0</b></div>
 <div class="stat"><span>Interstitial Ads</span><b id="myInterstitial">0</b></div>
 </div>
+
 </section>
 
+<!-- ADMIN PANEL -->
 <section id="admin" class="hidden">
+
 <div class="panel" id="adminLoginPanel">
 <h2>🔐 Admin Login</h2>
 <p class="muted">Supabase Auth দিয়ে যাচাইকৃত Admin প্রবেশ</p>
+
 <label for="adminEmail">Admin Email</label>
 <input id="adminEmail" type="email" autocomplete="username" placeholder="আপনার Admin email">
+
 <label for="adminPassword">Password</label>
 <input id="adminPassword" type="password" autocomplete="current-password" placeholder="আপনার Admin password">
+
 <button id="loginButton" onclick="adminLogin()">Login</button>
 <p id="adminMessage" role="status"></p>
-<div class="notice">শুধু Supabase Authentication-এ তৈরি এবং admin_users টেবিলে অনুমোদিত অ্যাকাউন্ট প্রবেশ করতে পারবে।</div>
+
+<div class="notice">
+শুধু Supabase Authentication-এ তৈরি এবং admin_users টেবিলে অনুমোদিত অ্যাকাউন্ট প্রবেশ করতে পারবে।
+</div>
 </div>
 
 <div id="adminTools" class="hidden">
+
 <div class="panel">
 <h2>🔐 Admin Session</h2>
 <p id="adminIdentity" class="muted"></p>
@@ -115,38 +147,51 @@ hr{border:0;border-top:1px solid #50617b;margin:14px 0}
 </div>
 
 <div class="panel">
-<h2>📊 Server Dashboard</h2>
-  
-<div class="panel">
-  <h2>👥 Player Management</h2>
-  <p class="muted">Supabase Database-এর Player তালিকা</p>
-  <button id="loadPlayersButton" onclick="loadPlayers()">↻ Load Players</button>
-  <p id="playersMessage" class="muted" role="status"></p>
-  <div id="playersList"></div>
+<h2>👥 Player Management</h2>
+<p class="muted">Supabase Database-এর Player তালিকা</p>
+<button id="loadPlayersButton" onclick="loadPlayers()">↻ Load Players</button>
+<p id="playersMessage" class="muted" role="status"></p>
+<div id="playersList"></div>
 </div>
 
+<div class="panel">
+<h2>📊 Server Dashboard</h2>
 <p class="muted">Supabase Database থেকে পাওয়া আসল সার্ভার পরিসংখ্যান</p>
+
 <div class="server-grid">
-  <div class="server-card"><span>মোট Player</span><b id="serverPlayers">—</b></div>
-  <div class="server-card"><span>মোট Coin</span><b id="serverCoins">—</b></div>
-  <div class="server-card"><span>মোট Ad Events</span><b id="serverAds">—</b></div>
-  <div class="server-card"><span>Verified Ads</span><b id="serverVerifiedAds">—</b></div>
-  <div class="server-card" style="grid-column:1/-1"><span>Verified Ad Reward Coins</span><b id="serverRewardCoins">—</b></div>
+<div class="server-card"><span>মোট Player</span><b id="serverPlayers">—</b></div>
+<div class="server-card"><span>মোট Coin</span><b id="serverCoins">—</b></div>
+<div class="server-card"><span>মোট Ad Events</span><b id="serverAds">—</b></div>
+<div class="server-card"><span>Verified Ads</span><b id="serverVerifiedAds">—</b></div>
+<div class="server-card" style="grid-column:1/-1">
+<span>Verified Ad Reward Coins</span>
+<b id="serverRewardCoins">—</b>
 </div>
+</div>
+
 <p id="serverStatsMessage" role="status"></p>
 <button id="refreshStatsButton" onclick="loadDashboardStats()">↻ Refresh Statistics</button>
-<div class="notice" style="margin-top:12px">এই পরিসংখ্যান Supabase-এর admin_dashboard_stats() function থেকে আসে। Player ও Ad reward এখনো Demo; বাস্তব বিজ্ঞাপন/Reward ব্যবস্থা আলাদাভাবে সার্ভারে তৈরি করতে হবে।</div>
+
+<div class="notice" style="margin-top:12px">
+Player Registration Supabase-এ যুক্ত হয়েছে। Reward Ads এখনো Demo।
+</div>
 </div>
 
 <div class="panel">
 <h2>⚙️ Ad Settings (Demo)</h2>
-<div class="notice">Login server-side যাচাই হচ্ছে। তবে এই Settings এখনো শুধু এই ব্রাউজারের local Demo data; বাস্তব Player বা সার্ভারের Settings পরিবর্তন করে না। Production-এর জন্য secure server function লাগবে।</div>
+<div class="notice">
+এই Settings শুধু এই ব্রাউজারের Local Demo data পরিবর্তন করে।
+</div>
+
 <label>Daily Reward Ad Limit</label>
 <input id="dailyLimit" type="number" min="1" max="100">
+
 <label>Reward Per Ad</label>
 <input id="rewardAmount" type="number" min="0">
+
 <button onclick="saveSettings()">Save Demo Settings</button>
 </div>
+
 <div class="panel">
 <h2>📊 Local Demo Statistics</h2>
 <div class="stat"><span>আজকের Reward Ads</span><b id="adminRewards">0</b></div>
@@ -154,325 +199,580 @@ hr{border:0;border-top:1px solid #50617b;margin:14px 0}
 <div class="stat"><span>মোট Reward Points</span><b id="adminPoints">0</b></div>
 <div class="stat"><span>Player Balance</span><b id="adminBalance">0</b></div>
 </div>
+
 <div class="panel">
 <h2>⚠️ Reset Demo Data</h2>
-<button onclick="resetDemo()" style="background:#ef4444;color:white">Reset All Demo Data</button>
+<button onclick="resetDemo()" style="background:#ef4444;color:white">
+Reset All Demo Data
+</button>
 </div>
+
 </div>
 </section>
 </main>
 
 <script>
-/*
- * Public browser configuration only. Never put service_role/secret keys here.
- */
+
+/* SUPABASE PUBLIC CONFIGURATION */
 const SUPABASE_URL = "https://imsvkaqtbmcayampopac.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_W1hPfV4BsYDr5bAhNduXiw_vz_Yxe25";
+
+const SUPABASE_PUBLISHABLE_KEY =
+"sb_publishable_W1hPfV4BsYDr5bAhNduXiw_vz_Yxe25";
+
 const supabaseClient = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_PUBLISHABLE_KEY,
-  { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }
+SUPABASE_URL,
+SUPABASE_PUBLISHABLE_KEY,
+{
+auth:{
+persistSession:true,
+autoRefreshToken:true,
+detectSessionInUrl:true
+}
+}
 );
 
+/* BASIC FUNCTIONS */
+
 function formatNumber(value){
-  return Number(value || 0).toLocaleString("en-US");
+return Number(value || 0).toLocaleString("en-US");
 }
-const DAY = 24 * 60 * 60 * 1000;
-function today(){
-  const d=new Date();
-  return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();
-}
-function get(key,fallback){
-  try{const value=localStorage.getItem("bdt_"+key);return value===null?fallback:JSON.parse(value);}
-  catch(e){return fallback;}
-}
-function put(key,value){localStorage.setItem("bdt_"+key,JSON.stringify(value));}
-function resetDay(){
-  if(get("date","")!==today()){
-    put("date",today());put("used",0);put("earned",0);put("rewards",0);put("interstitial",0);
-  }
-}
-function settings(){return {limit:Number(get("limit",10)),reward:Number(get("reward",100))};}
+
 function showPanel(name){
-  document.getElementById("player").classList.toggle("hidden",name!=="player");
-  document.getElementById("admin").classList.toggle("hidden",name!=="admin");
+document.getElementById("player").classList.toggle("hidden",name!=="player");
+document.getElementById("admin").classList.toggle("hidden",name!=="admin");
 }
+
+function today(){
+const d=new Date();
+return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();
+}
+
+function get(key,fallback){
+try{
+const value=localStorage.getItem("bdt_"+key);
+return value===null?fallback:JSON.parse(value);
+}catch(e){
+return fallback;
+}
+}
+
+function put(key,value){
+localStorage.setItem("bdt_"+key,JSON.stringify(value));
+}
+
+function resetDay(){
+if(get("date","")!==today()){
+put("date",today());
+put("used",0);
+put("earned",0);
+put("rewards",0);
+put("interstitial",0);
+}
+}
+
+function settings(){
+return{
+limit:Number(get("limit",10)),
+reward:Number(get("reward",100))
+};
+}
+
 function update(){
-  resetDay();
-  const used=get("used",0),limit=settings().limit,balance=get("balance",0);
-  document.getElementById("balance").textContent=balance;
-  document.getElementById("used").textContent=used+" / "+limit;
-  document.getElementById("left").textContent=Math.max(0,limit-used);
-  document.getElementById("earned").textContent=get("earned",0)+" Points";
-  document.getElementById("myRewards").textContent=get("rewards",0);
-  document.getElementById("myInterstitial").textContent=get("interstitial",0);
-  document.getElementById("adminRewards").textContent=get("rewards",0);
-  document.getElementById("adminInterstitial").textContent=get("interstitial",0);
-  document.getElementById("adminPoints").textContent=get("earned",0);
-  document.getElementById("adminBalance").textContent=balance;
-  document.getElementById("dailyLimit").value=limit;
-  document.getElementById("rewardAmount").value=settings().reward;
+resetDay();
+
+const used=get("used",0);
+const limit=settings().limit;
+const balance=get("balance",0);
+
+document.getElementById("balance").textContent=balance;
+document.getElementById("used").textContent=used+" / "+limit;
+document.getElementById("left").textContent=Math.max(0,limit-used);
+document.getElementById("earned").textContent=get("earned",0)+" Points";
+document.getElementById("myRewards").textContent=get("rewards",0);
+document.getElementById("myInterstitial").textContent=get("interstitial",0);
+document.getElementById("adminRewards").textContent=get("rewards",0);
+document.getElementById("adminInterstitial").textContent=get("interstitial",0);
+document.getElementById("adminPoints").textContent=get("earned",0);
+document.getElementById("adminBalance").textContent=balance;
+document.getElementById("dailyLimit").value=limit;
+document.getElementById("rewardAmount").value=settings().reward;
 }
+
+/* DEMO REWARDS ONLY */
+
 function canReward(){
-  resetDay();
-  if(get("used",0)>=settings().limit){
-    document.getElementById("message").textContent="আজকের Reward Ad Limit শেষ!";
-    return false;
-  }
-  return true;
+resetDay();
+
+if(get("used",0)>=settings().limit){
+document.getElementById("message").textContent="আজকের Reward Ad Limit শেষ!";
+return false;
 }
-// Demo only: never use this as a real ad reward flow.
+return true;
+}
+
 function watchReward(){
-  if(!canReward())return;
-  alert("এটি Reward Ad Demo। আসল বিজ্ঞাপন বা server verification যুক্ত হয়নি।");
-  const amount=settings().reward;
-  put("used",get("used",0)+1);put("rewards",get("rewards",0)+1);
-  put("earned",get("earned",0)+amount);put("balance",get("balance",0)+amount);
-  document.getElementById("message").textContent=amount+" Demo Points যোগ হয়েছে!";
-  update();
+if(!canReward())return;
+
+alert("এটি Reward Ad Demo। আসল বিজ্ঞাপন বা Server Verification যুক্ত হয়নি।");
+
+const amount=settings().reward;
+
+put("used",get("used",0)+1);
+put("rewards",get("rewards",0)+1);
+put("earned",get("earned",0)+amount);
+put("balance",get("balance",0)+amount);
+
+document.getElementById("message").textContent=amount+" Demo Points যোগ হয়েছে!";
+update();
 }
+
 function watchInterstitial(){
-  alert("Interstitial Ad Demo। আসল Ad এখনো যুক্ত হয়নি।");
-  put("interstitial",get("interstitial",0)+1);
-  document.getElementById("message").textContent="Interstitial Demo সম্পন্ন হয়েছে.";
-  update();
+alert("Interstitial Ad Demo। আসল Ad এখনো যুক্ত হয়নি।");
+
+put("interstitial",get("interstitial",0)+1);
+
+document.getElementById("message").textContent="Interstitial Demo সম্পন্ন হয়েছে.";
+update();
 }
+
+/* TELEGRAM PLAYER REGISTRATION */
+
+async function startTelegramRegistration(){
+
+const status=document.getElementById("telegramRegistrationStatus");
+const info=document.getElementById("telegramPlayerInfo");
+
+try{
+
+if(!window.Telegram || !window.Telegram.WebApp){
+status.textContent="Telegram App পাওয়া যায়নি। Bot থেকে গেম খুলুন।";
+return;
+}
+
+const tg=window.Telegram.WebApp;
+
+tg.ready();
+tg.expand();
+
+const initData=tg.initData;
+
+if(!initData){
+status.textContent="Telegram Bot-এর Play বাটন দিয়ে গেম খুলুন।";
+return;
+}
+
+status.textContent="Telegram পরিচয় যাচাই হচ্ছে...";
+
+const response=await fetch(
+SUPABASE_URL+"/functions/v1/telegram-register",
+{
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+"apikey":SUPABASE_PUBLISHABLE_KEY
+},
+body:JSON.stringify({initData:initData})
+}
+);
+
+const result=await response.json();
+
+if(!response.ok || !result.success){
+throw new Error(result.error || "Registration ব্যর্থ হয়েছে।");
+}
+
+const player=result.player;
+
+status.textContent="✅ Telegram Registration সফল হয়েছে!";
+
+info.textContent=
+"Username: "+(player.username ? "@"+player.username : "নেই")+
+" | Player ID: "+player.id+
+" | Telegram ID: "+player.telegram_id;
+
+document.getElementById("balance").textContent=
+formatNumber(player.coins);
+
+}catch(error){
+
+status.textContent="সমস্যা: "+error.message;
+console.error("Telegram Registration:",error);
+
+}
+
+}
+
+/* ADMIN DASHBOARD STATS */
 
 async function loadDashboardStats(){
-  const message=document.getElementById("serverStatsMessage");
-  const button=document.getElementById("refreshStatsButton");
-  message.textContent="সার্ভার থেকে তথ্য আনা হচ্ছে...";
-  button.disabled=true;
-  try{
-    const {data,error}=await supabaseClient.rpc("admin_dashboard_stats");
-    if(error)throw error;
-    if(!data || typeof data!=="object")throw new Error("সার্ভার থেকে সঠিক তথ্য পাওয়া যায়নি।");
-    document.getElementById("serverPlayers").textContent=formatNumber(data.total_players);
-    document.getElementById("serverCoins").textContent=formatNumber(data.total_coins);
-    document.getElementById("serverAds").textContent=formatNumber(data.total_ad_events);
-    document.getElementById("serverVerifiedAds").textContent=formatNumber(data.verified_ads);
-    document.getElementById("serverRewardCoins").textContent=formatNumber(data.reward_coins);
-    message.textContent="সার্ভার পরিসংখ্যান সফলভাবে আপডেট হয়েছে।";
-  }catch(error){
-    message.textContent="তথ্য লোড হয়নি: "+(error.message||"অজানা সমস্যা");
-  }finally{
-    button.disabled=false;
-  }
+
+const message=document.getElementById("serverStatsMessage");
+const button=document.getElementById("refreshStatsButton");
+
+message.textContent="সার্ভার থেকে তথ্য আনা হচ্ছে...";
+button.disabled=true;
+
+try{
+
+const {data,error}=await supabaseClient.rpc("admin_dashboard_stats");
+
+if(error)throw error;
+
+if(!data || typeof data!=="object"){
+throw new Error("সার্ভার থেকে সঠিক তথ্য পাওয়া যায়নি।");
 }
 
+document.getElementById("serverPlayers").textContent=formatNumber(data.total_players);
+document.getElementById("serverCoins").textContent=formatNumber(data.total_coins);
+document.getElementById("serverAds").textContent=formatNumber(data.total_ad_events);
+document.getElementById("serverVerifiedAds").textContent=formatNumber(data.verified_ads);
+document.getElementById("serverRewardCoins").textContent=formatNumber(data.reward_coins);
 
-async function adjustPlayerCoins(playerId, action) {
-  const amountText = prompt("কত Coins পরিবর্তন করতে চাও?");
-  if (amountText === null) return;
+message.textContent="সার্ভার পরিসংখ্যান সফলভাবে আপডেট হয়েছে।";
 
-  const amount = Number(amountText);
+}catch(error){
 
-  if (!Number.isSafeInteger(amount) || amount <= 0) {
-    alert("সঠিক পূর্ণসংখ্যা লিখুন।");
-    return;
-  }
+message.textContent="তথ্য লোড হয়নি: "+(error.message||"অজানা সমস্যা");
 
-  const reason = prompt("পরিবর্তনের কারণ লিখুন:");
-  if (!reason || !reason.trim()) return;
+}finally{
 
-  const signedAmount = action === "add" ? amount : -amount;
+button.disabled=false;
 
-  if (!confirm("এই Player-এর Coins পরিবর্তন করতে চাও?")) return;
-
-  const { data, error } = await supabaseClient.rpc(
-    "admin_adjust_player_coins",
-    {
-      p_player_id: String(playerId),
-      p_amount: signedAmount,
-      p_reason: reason.trim()
-    }
-  );
-
-  if (error) {
-    alert("সমস্যা: " + error.message);
-    return;
-  }
-
-  alert("Coin পরিবর্তন সফল হয়েছে!");
-  await loadPlayers();
 }
 
-async function togglePlayerBlock(playerId, currentlyBlocked) {
-  const blocked = !currentlyBlocked;
-
-  const reason = prompt("Block/Unblock করার কারণ লিখুন:");
-  if (!reason || !reason.trim()) return;
-
-  if (!confirm(blocked ? "এই Player-কে Block করবে?" : "এই Player-কে Unblock করবে?")) return;
-
-  const { data, error } = await supabaseClient.rpc(
-    "admin_set_player_block",
-    {
-      p_player_id: String(playerId),
-      p_blocked: blocked,
-      p_reason: reason.trim()
-    }
-  );
-
-  if (error) {
-    alert("সমস্যা: " + error.message);
-    return;
-  }
-
-  alert(blocked ? "Player Block হয়েছে!" : "Player Unblock হয়েছে!");
-  await loadPlayers();
 }
 
-async function loadPlayers() {
-  const message = document.getElementById("playersMessage");
-  const list = document.getElementById("playersList");
-  const button = document.getElementById("loadPlayersButton");
+/* PLAYER COIN MANAGEMENT */
 
-  message.textContent = "Player তথ্য আনা হচ্ছে...";
-  list.replaceChildren();
-  button.disabled = true;
+async function adjustPlayerCoins(playerId,action){
 
-  try {
-    const { data, error } = await supabaseClient.rpc("admin_list_players");
-    if (error) throw error;
+const amountText=prompt("কত Coins পরিবর্তন করতে চাও?");
 
-    if (!Array.isArray(data)) {
-      throw new Error("Player List-এর তথ্য সঠিক নয়।");
-    }
+if(amountText===null)return;
 
-    if (data.length === 0) {
-      message.textContent = "এখনো কোনো Player পাওয়া যায়নি।";
-      return;
-    }
+const amount=Number(amountText);
 
-    data.forEach(player => {
-      const card = document.createElement("div");
-      card.className = "ad";
-
-      const playerId = player.player_id;
-      const blocked = String(player.is_blocked).toLowerCase() === "true";
-
-      const details = [
-        ["Username", player.username],
-        ["Player ID", playerId],
-        ["Telegram ID", player.telegram_id],
-        ["Coins", player.coins],
-        ["Balance", player.balance],
-        ["Status", blocked ? "Blocked" : "Active"],
-        ["Created", player.created_at]
-      ];
-
-      details.forEach(([label, value]) => {
-        const row = document.createElement("p");
-        row.textContent = label + ": " + (value ?? "—");
-        card.appendChild(row);
-      });
-
-      const addButton = document.createElement("button");
-      addButton.textContent = "➕ Add Coins";
-      addButton.addEventListener("click", () => {
-        adjustPlayerCoins(playerId, "add");
-      });
-
-      const removeButton = document.createElement("button");
-      removeButton.textContent = "➖ Remove Coins";
-      removeButton.addEventListener("click", () => {
-        adjustPlayerCoins(playerId, "remove");
-      });
-
-      const blockButton = document.createElement("button");
-      blockButton.textContent = blocked ? "Unblock Player" : "Block Player";
-      blockButton.addEventListener("click", () => {
-        togglePlayerBlock(playerId, blocked);
-      });
-
-      card.appendChild(addButton);
-      card.appendChild(removeButton);
-      card.appendChild(blockButton);
-
-      list.appendChild(card);
-    });
-
-    message.textContent = data.length + " জন Player পাওয়া গেছে।";
-
-  } catch(error) {
-    message.textContent = "সমস্যা: " + (error.message || "তথ্য লোড হয়নি");
-  } finally {
-    button.disabled = false;
-  }
+if(!Number.isSafeInteger(amount)||amount<=0){
+alert("সঠিক পূর্ণসংখ্যা লিখুন।");
+return;
 }
+
+const reason=prompt("পরিবর্তনের কারণ লিখুন:");
+
+if(!reason||!reason.trim())return;
+
+const signedAmount=action==="add"?amount:-amount;
+
+if(!confirm("এই Player-এর Coins পরিবর্তন করতে চাও?"))return;
+
+const {error}=await supabaseClient.rpc(
+"admin_adjust_player_coins",
+{
+p_player_id:String(playerId),
+p_amount:signedAmount,
+p_reason:reason.trim()
+}
+);
+
+if(error){
+alert("সমস্যা: "+error.message);
+return;
+}
+
+alert("Coin পরিবর্তন সফল হয়েছে!");
+
+await loadPlayers();
+
+}
+
+/* PLAYER BLOCK / UNBLOCK */
+
+async function togglePlayerBlock(playerId,currentlyBlocked){
+
+const blocked=!currentlyBlocked;
+
+const reason=prompt("Block/Unblock করার কারণ লিখুন:");
+
+if(!reason||!reason.trim())return;
+
+if(!confirm(blocked?"এই Player-কে Block করবে?":"এই Player-কে Unblock করবে?"))return;
+
+const {error}=await supabaseClient.rpc(
+"admin_set_player_block",
+{
+p_player_id:String(playerId),
+p_blocked:blocked,
+p_reason:reason.trim()
+}
+);
+
+if(error){
+alert("সমস্যা: "+error.message);
+return;
+}
+
+alert(blocked?"Player Block হয়েছে!":"Player Unblock হয়েছে!");
+
+await loadPlayers();
+
+}
+
+/* LOAD PLAYER LIST */
+
+async function loadPlayers(){
+
+const message=document.getElementById("playersMessage");
+const list=document.getElementById("playersList");
+const button=document.getElementById("loadPlayersButton");
+
+message.textContent="Player তথ্য আনা হচ্ছে...";
+list.replaceChildren();
+button.disabled=true;
+
+try{
+
+const {data,error}=await supabaseClient.rpc("admin_list_players");
+
+if(error)throw error;
+
+if(!Array.isArray(data)){
+throw new Error("Player List-এর তথ্য সঠিক নয়।");
+}
+
+if(data.length===0){
+message.textContent="এখনো কোনো Player পাওয়া যায়নি।";
+return;
+}
+
+data.forEach(player=>{
+
+const card=document.createElement("div");
+card.className="ad";
+
+const playerId=player.player_id;
+const blocked=String(player.is_blocked).toLowerCase()==="true";
+
+const details=[
+["Username",player.username],
+["Player ID",playerId],
+["Telegram ID",player.telegram_id],
+["Coins",player.coins],
+["Balance",player.balance],
+["Status",blocked?"Blocked":"Active"],
+["Created",player.created_at]
+];
+
+details.forEach(([label,value])=>{
+const row=document.createElement("p");
+row.textContent=label+": "+(value??"—");
+card.appendChild(row);
+});
+
+const addButton=document.createElement("button");
+addButton.textContent="➕ Add Coins";
+addButton.addEventListener("click",()=>{
+adjustPlayerCoins(playerId,"add");
+});
+
+const removeButton=document.createElement("button");
+removeButton.textContent="➖ Remove Coins";
+removeButton.addEventListener("click",()=>{
+adjustPlayerCoins(playerId,"remove");
+});
+
+const blockButton=document.createElement("button");
+blockButton.textContent=blocked?"Unblock Player":"Block Player";
+blockButton.addEventListener("click",()=>{
+togglePlayerBlock(playerId,blocked);
+});
+
+card.appendChild(addButton);
+card.appendChild(removeButton);
+card.appendChild(blockButton);
+
+list.appendChild(card);
+
+});
+
+message.textContent=data.length+" জন Player পাওয়া গেছে।";
+
+}catch(error){
+
+message.textContent="সমস্যা: "+(error.message||"তথ্য লোড হয়নি");
+
+}finally{
+
+button.disabled=false;
+
+}
+
+}
+
+/* ADMIN LOGIN */
 
 async function adminLogin(){
-  const email=document.getElementById("adminEmail").value.trim();
-  const password=document.getElementById("adminPassword").value;
-  const message=document.getElementById("adminMessage");
-  const button=document.getElementById("loginButton");
-  if(!email||!password){message.textContent="ইমেইল ও পাসওয়ার্ড লিখুন।";return;}
-  button.disabled=true;button.textContent="যাচাই হচ্ছে...";
-  message.textContent="";
-  try{
-    const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
-    if(error)throw error;
-    const {data:isAdmin,error:roleError}=await supabaseClient.rpc("is_admin");
-    if(roleError)throw roleError;
-    if(isAdmin!==true){
-      await supabaseClient.auth.signOut();
-      throw new Error("এই অ্যাকাউন্ট Admin হিসেবে অনুমোদিত নয়।");
-    }
-    document.getElementById("adminTools").classList.remove("hidden");
-    document.getElementById("adminLoginPanel").classList.add("hidden");
-    document.getElementById("adminIdentity").textContent="Logged in: "+(data.user.email||"Verified Admin");
-    document.getElementById("adminPassword").value="";
-    message.textContent="Admin পরিচয় সার্ভার থেকে যাচাই হয়েছে।";
-    update();
-    await loadDashboardStats();
-    await loadPlayers();
-  }catch(error){
-    message.textContent=error.message||"Login ব্যর্থ হয়েছে।";
-  }finally{
-    button.disabled=false;button.textContent="Login";
-  }
+
+const email=document.getElementById("adminEmail").value.trim();
+const password=document.getElementById("adminPassword").value;
+
+const message=document.getElementById("adminMessage");
+const button=document.getElementById("loginButton");
+
+if(!email||!password){
+message.textContent="ইমেইল ও পাসওয়ার্ড লিখুন।";
+return;
 }
+
+button.disabled=true;
+button.textContent="যাচাই হচ্ছে...";
+message.textContent="";
+
+try{
+
+const {data,error}=await supabaseClient.auth.signInWithPassword({
+email,
+password
+});
+
+if(error)throw error;
+
+const {data:isAdmin,error:roleError}=await supabaseClient.rpc("is_admin");
+
+if(roleError)throw roleError;
+
+if(isAdmin!==true){
+
+await supabaseClient.auth.signOut();
+
+throw new Error("এই অ্যাকাউন্ট Admin হিসেবে অনুমোদিত নয়।");
+
+}
+
+document.getElementById("adminTools").classList.remove("hidden");
+document.getElementById("adminLoginPanel").classList.add("hidden");
+
+document.getElementById("adminIdentity").textContent=
+"Logged in: "+(data.user.email||"Verified Admin");
+
+document.getElementById("adminPassword").value="";
+
+message.textContent="Admin পরিচয় সার্ভার থেকে যাচাই হয়েছে।";
+
+update();
+
+await loadDashboardStats();
+await loadPlayers();
+
+}catch(error){
+
+message.textContent=error.message||"Login ব্যর্থ হয়েছে।";
+
+}finally{
+
+button.disabled=false;
+button.textContent="Login";
+
+}
+
+}
+
+/* ADMIN LOGOUT */
+
 async function adminLogout(){
-  await supabaseClient.auth.signOut();
-  document.getElementById("adminTools").classList.add("hidden");
-  document.getElementById("adminLoginPanel").classList.remove("hidden");
-  document.getElementById("adminPassword").value="";
-  document.getElementById("adminMessage").textContent="Logout সম্পন্ন হয়েছে।";
+
+await supabaseClient.auth.signOut();
+
+document.getElementById("adminTools").classList.add("hidden");
+document.getElementById("adminLoginPanel").classList.remove("hidden");
+document.getElementById("adminPassword").value="";
+document.getElementById("adminMessage").textContent="Logout সম্পন্ন হয়েছে।";
+
 }
+
+/* RESTORE ADMIN SESSION */
+
 async function restoreAdminSession(){
-  try{
-    const {data:{session}}=await supabaseClient.auth.getSession();
-    if(!session)return;
-    const {data:isAdmin,error}=await supabaseClient.rpc("is_admin");
-    if(!error&&isAdmin===true){
-      document.getElementById("adminTools").classList.remove("hidden");
-      document.getElementById("adminLoginPanel").classList.add("hidden");
-      document.getElementById("adminIdentity").textContent="Logged in: "+(session.user.email||"Verified Admin");
-      await loadDashboardStats();
-      await loadPlayers();
-    }else{
-      await supabaseClient.auth.signOut();
-    }
-  }catch(e){console.error("Session restore failed",e);}
+
+try{
+
+const {data:{session}}=await supabaseClient.auth.getSession();
+
+if(!session)return;
+
+const {data:isAdmin,error}=await supabaseClient.rpc("is_admin");
+
+if(!error&&isAdmin===true){
+
+document.getElementById("adminTools").classList.remove("hidden");
+document.getElementById("adminLoginPanel").classList.add("hidden");
+
+document.getElementById("adminIdentity").textContent=
+"Logged in: "+(session.user.email||"Verified Admin");
+
+await loadDashboardStats();
+await loadPlayers();
+
+}else{
+
+await supabaseClient.auth.signOut();
+
 }
+
+}catch(e){
+
+console.error("Session restore failed",e);
+
+}
+
+}
+
+/* DEMO SETTINGS */
+
 function saveSettings(){
-  const limit=Number(document.getElementById("dailyLimit").value);
-  const reward=Number(document.getElementById("rewardAmount").value);
-  if(!Number.isInteger(limit)||limit<1||limit>100||!Number.isInteger(reward)||reward<0){
-    alert("সঠিক সংখ্যা লিখুন!");return;
-  }
-  put("limit",limit);put("reward",reward);
-  alert("Demo Settings সংরক্ষিত হয়েছে। এটি সার্ভারের Settings নয়।");
-  update();
+
+const limit=Number(document.getElementById("dailyLimit").value);
+const reward=Number(document.getElementById("rewardAmount").value);
+
+if(!Number.isInteger(limit)||limit<1||limit>100||
+!Number.isInteger(reward)||reward<0){
+
+alert("সঠিক সংখ্যা লিখুন!");
+return;
+
 }
+
+put("limit",limit);
+put("reward",reward);
+
+alert("Demo Settings সংরক্ষিত হয়েছে। এটি সার্ভারের Settings নয়।");
+
+update();
+
+}
+
+/* RESET DEMO */
+
 function resetDemo(){
-  if(!confirm("সব Demo Data মুছে ফেলতে চাও?"))return;
-  Object.keys(localStorage).filter(k=>k.startsWith("bdt_")).forEach(k=>localStorage.removeItem(k));
-  alert("Demo Data Reset হয়েছে!");location.reload();
+
+if(!confirm("সব Demo Data মুছে ফেলতে চাও?"))return;
+
+Object.keys(localStorage)
+.filter(k=>k.startsWith("bdt_"))
+.forEach(k=>localStorage.removeItem(k));
+
+alert("Demo Data Reset হয়েছে!");
+
+location.reload();
+
 }
+
+/* START */
+
 update();
 restoreAdminSession();
+startTelegramRegistration();
+
 </script>
+
 </body>
 </html>
